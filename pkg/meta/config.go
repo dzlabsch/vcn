@@ -10,101 +10,101 @@ package meta
 
 import (
 	"math/big"
+	"os"
 	"time"
 )
 
+// DashboardURL returns the CodeNotary's dashboard URL.
 func DashboardURL() string {
 	switch StageEnvironment() {
-	case StageProduction:
-		return "https://dashboard.codenotary.io"
+	case StageTest:
+		return os.Getenv("VCN_TEST_DASHBOARD")
 	case StageStaging:
 		return "https://dashboard.staging.codenotary.io"
-	case StageTest:
-		return "https://dashboard.test.codenotary.io"
+	case StageProduction:
+		fallthrough
 	default:
 		return "https://dashboard.codenotary.io"
 	}
 }
 
-func MainNetEndpoint() string {
+// MainNet returns the CodeNotary mainnet URL.
+func MainNet() string {
 	switch StageEnvironment() {
-	case StageProduction:
-		return "https://main.codenotary.io"
+	case StageTest:
+		return os.Getenv("VCN_TEST_NET")
 	case StageStaging:
 		return "https://main.staging.codenotary.io"
-	case StageTest:
-		return "https://main.test.codenotary.io"
+	case StageProduction:
+		fallthrough
 	default:
 		return "https://main.codenotary.io"
 	}
 }
 
-func FoundationEndpoint() string {
+// APIEndpoint returns the API's endpoint URL for a given resource.
+func APIEndpoint(resource string) string {
+	base := ""
 	switch StageEnvironment() {
-	case StageProduction:
-		return "https://api.codenotary.io/foundation"
-	case StageStaging:
-		return "https://api.staging.codenotary.io/foundation"
 	case StageTest:
-		return "https://api.test.codenotary.io/foundation"
+		base = os.Getenv("VCN_TEST_API")
+	case StageStaging:
+		base = "https://api.staging.codenotary.io/foundation"
+	case StageProduction:
+		fallthrough
 	default:
-		return "https://api.codenotary.io/foundation"
+		base = "https://api.codenotary.io/foundation"
 	}
+
+	return base + "/v1/" + resource
 }
 
+// AssetsRelayContractAddress returns the AssetsRelay smart contract public address.
 func AssetsRelayContractAddress() string {
 	switch StageEnvironment() {
-	case StageProduction:
-		return "0x495021fe1a48a5b0c85ef1abd68c42cdfc7cda08"
-	case StageStaging:
-		return "0xf1d4b9fe8290bb5718db5d46c313e7b266570c21"
 	case StageTest:
-		return "0x0"
+		return os.Getenv("VCN_TEST_CONTRACT")
+	case StageStaging:
+		return "0x4eb8d2866da4341796ce64a983786a01b1072939"
+	case StageProduction:
+		fallthrough
 	default:
-		return "0x495021fe1a48a5b0c85ef1abd68c42cdfc7cda08"
+		return "0x41a749a79a78b388607df06c25adbc73dbbf1e87"
 	}
 }
 
-func TrackingEvent() string {
-	return FoundationEndpoint() + "/v1/tracking-event"
+// OrganisationsRelayContractAddress returns the OrganisationsRelay smart contract public address.
+func OrganisationsRelayContractAddress() string {
+	switch StageEnvironment() {
+	case StageTest:
+		return os.Getenv("VCN_TEST_CONTRACT_ORG")
+	case StageStaging:
+		return "0x4a9a0547949ec55ecbf06738e8c2bad747f410bb"
+	case StageProduction:
+		fallthrough
+	default:
+		return "0x258e39ff07e6e3a2430aa951f387cfbd808835bc"
+	}
 }
 
-func TokenCheckEndpoint() string {
-	return PublisherEndpoint() + "/auth/check"
-}
-
-func PublisherEndpoint() string {
-	return FoundationEndpoint() + "/v1/publisher"
-}
-
-func WalletEndpoint() string {
-	return FoundationEndpoint() + "/v1/wallet"
-}
-
-func RemainingSignOpsEndpoint() string {
-	return FoundationEndpoint() + "/v1/artifact/remaining-sign-operations"
-}
-
-func ArtifactEndpoint() string {
-	return FoundationEndpoint() + "/v1/artifact"
-}
-
-func ArtifactEndpointForWallet(walletAddress string) string {
-	return FoundationEndpoint() + "/v1/artifact?wallet-address=" + walletAddress
-}
-
+// TxVerificationRounds returns the maximum number of rounds to try before considering a pending transaction failed.
+// The duration of each round is returned by PollInterval()
 func TxVerificationRounds() uint64 {
 	return 30
 }
 
+// PollInterval returns the waiting time between each round.
+// See TxVerificationRounds().
 func PollInterval() time.Duration {
 	return 2 * time.Second
 }
 
+// GasPrice for transactions.
 func GasPrice() *big.Int {
 	return big.NewInt(0)
 }
 
+// GasLimit for transactions.
 func GasLimit() uint64 {
 	return 20000000
 }

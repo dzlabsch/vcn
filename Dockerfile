@@ -5,16 +5,17 @@
 # The full license information can be found under:
 # https://www.gnu.org/licenses/gpl-3.0.en.html
 
-FROM golang:1.12-stretch as builder
-
+FROM golang:1.13-stretch as build
 WORKDIR /src
 COPY . .
-RUN make install
+RUN GOOS=linux GOARCH=amd64 make static
 
-FROM alpine:3.9
+FROM alpine:3.9 as ca
+RUN apk add --no-cache \
+		ca-certificates
 
-RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
-RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
-COPY --from=builder /go/bin/vcn /bin/vcn
+FROM scratch
+COPY --from=ca /etc/ssl/certs /etc/ssl/certs
+COPY --from=build /src/vcn /bin/vcn
 
 ENTRYPOINT [ "/bin/vcn" ]

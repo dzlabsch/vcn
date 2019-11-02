@@ -18,6 +18,9 @@ const FilePerm os.FileMode = 0600
 // DirPerm holds permission bits that are used for all directories that store creates.
 const DirPerm os.FileMode = 0700
 
+// DefaultDirName is the name of the store working directory.
 const DefaultDirName = ".vcn"
 
 const configFilename = "config.json"
+
+const defaultSecretFile = "secret.json"

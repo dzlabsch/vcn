@@ -23,52 +23,125 @@ import (
 	"github.com/vchain-us/vcn/pkg/meta"
 )
 
+// BlockchainVerification represents the notarized data onto the blockchain.
 type BlockchainVerification struct {
-	Owner     common.Address `json:"owner"`
-	Level     meta.Level     `json:"level"`
-	Status    meta.Status    `json:"status"`
-	Timestamp time.Time      `json:"timestamp"`
+	Owner     common.Address `json:"owner" yaml:"owner"`
+	Level     meta.Level     `json:"level" yaml:"level"`
+	Status    meta.Status    `json:"status" yaml:"status"`
+	Timestamp time.Time      `json:"timestamp" yaml:"timestamp"`
 }
 
-func (v *BlockchainVerification) MarshalJSON() ([]byte, error) {
-	// todo(leogr): hacky, to be refactored
-	data := map[string]interface{}{
-		"owner":     "",
+// Trusted returns true if v.Status is meta.StatusTrusted
+func (v *BlockchainVerification) Trusted() bool {
+	return v != nil && v.Status == meta.StatusTrusted
+}
+
+// Unknown returns true if v is nil or v.Status is meta.StatusUnknown
+func (v *BlockchainVerification) Unknown() bool {
+	return v == nil || v.Status == meta.StatusUnknown
+}
+
+func (v *BlockchainVerification) toMap() map[string]interface{} {
+	if v == nil {
+		return nil
+	}
+	return map[string]interface{}{
+		"owner":     v.SignerID(),
 		"level":     v.Level,
 		"status":    v.Status,
-		"timestamp": "",
+		"timestamp": v.Date(),
 	}
-
-	if v.Owner != common.BigToAddress(big.NewInt(0)) {
-		data["owner"] = strings.ToLower(v.Owner.Hex())
-	}
-
-	if v.Timestamp != time.Unix(0, 0) {
-		data["timestamp"] = v.Timestamp.UTC().Format(time.RFC3339)
-	}
-
-	return json.Marshal(data)
-
 }
 
-func (verification *BlockchainVerification) MetaHash() string {
+func (v *BlockchainVerification) fromUnmarshaler(unmarshal func(interface{}) error) error {
+	if v == nil {
+		v = &BlockchainVerification{}
+	}
+	data := struct {
+		Owner     string
+		Level     int64
+		Status    int64
+		Timestamp string
+	}{}
+
+	if err := unmarshal(&data); err != nil {
+		return err
+	}
+
+	if data.Owner != "" {
+		v.Owner = common.HexToAddress(data.Owner)
+	}
+	v.Level = meta.Level(data.Level)
+	v.Status = meta.Status(data.Status)
+	if data.Timestamp != "" {
+		v.Timestamp.UnmarshalText([]byte(data.Timestamp))
+	}
+	return nil
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+func (v *BlockchainVerification) MarshalJSON() ([]byte, error) {
+	return json.Marshal(v.toMap())
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+func (v *BlockchainVerification) UnmarshalJSON(b []byte) error {
+	return v.fromUnmarshaler(func(value interface{}) error {
+		return json.Unmarshal(b, value)
+	})
+}
+
+// MarshalYAML implements the yaml.Marshaler interface.
+func (v *BlockchainVerification) MarshalYAML() (interface{}, error) {
+	return v.toMap(), nil
+}
+
+// UnmarshalYAML implements the yaml.Unmarshaler interface.
+func (v *BlockchainVerification) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	return v.fromUnmarshaler(unmarshal)
+}
+
+// MetaHash returns the SHA256 digest of BlockchainVerification's data.
+// The returned value uniquely identify a single notarization.
+func (v *BlockchainVerification) MetaHash() string {
+	if v == nil {
+		return ""
+	}
 	metadata := fmt.Sprintf("%s-%d-%d-%d",
-		verification.Owner.Hex(),
-		int64(verification.Level),
-		int64(verification.Status),
-		int64(verification.Timestamp.Unix()))
+		v.Owner.Hex(),
+		int64(v.Level),
+		int64(v.Status),
+		int64(v.Timestamp.Unix()))
 	metadataHashAsBytes := sha256.Sum256([]byte(metadata))
+	metahash := fmt.Sprintf("%x", metadataHashAsBytes)
 	logger().WithFields(logrus.Fields{
-		"metahash": metadata,
+		"metadata": metadata,
+		"metahash": metahash,
 	}).Trace("Generated metahash")
-	return fmt.Sprintf("%x", metadataHashAsBytes)
+	return metahash
 }
 
-func BlockChainVerify(hash string) (verification *BlockchainVerification, err error) {
-	logger().WithFields(logrus.Fields{
-		"hash": hash,
-	}).Trace("BlockChainVerify")
-	client, err := ethclient.Dial(meta.MainNetEndpoint())
+// SignerID returns the public address derived from owner's public key (v.Owner), if any, otherwise an empty string.
+func (v *BlockchainVerification) SignerID() string {
+	if v != nil && v.Owner != common.BigToAddress(big.NewInt(0)) {
+		return strings.ToLower(v.Owner.Hex())
+	}
+	return ""
+}
+
+// Date returns a RFC3339 formatted string of verification time (v.Timestamp), if any, otherwise an empty string.
+func (v *BlockchainVerification) Date() string {
+	if v != nil {
+		ut := v.Timestamp.UTC()
+		if ut.Unix() > 0 {
+			return ut.Format(time.RFC3339)
+		}
+	}
+	return ""
+}
+
+func callVerifyFunc(f func(*blockchain.AssetsRelay) (common.Address, *big.Int, *big.Int, *big.Int, error)) (*BlockchainVerification, error) {
+	client, err := ethclient.Dial(meta.MainNet())
 	if err != nil {
 		return nil, err
 	}
@@ -77,69 +150,74 @@ func BlockChainVerify(hash string) (verification *BlockchainVerification, err er
 	if err != nil {
 		return nil, err
 	}
-	address, level, status, timestamp, err := instance.Verify(nil, hash)
+	address, level, status, timestamp, err := f(instance)
 	if err != nil {
 		return nil, err
 	}
-	verification = new(BlockchainVerification)
-	verification.Owner = address
-	verification.Level = meta.Level(level.Int64())
-	verification.Status = meta.Status(status.Int64())
-	verification.Timestamp = time.Unix(timestamp.Int64(), 0)
-	logger().
-		WithField("verification", verification).
-		Trace("Received blockchain verification")
-	return verification, nil
+	if meta.Status(status.Int64()) != meta.StatusUnknown && address != common.BigToAddress(big.NewInt(0)) {
+		verification := &BlockchainVerification{
+			Owner:     address,
+			Level:     meta.Level(level.Int64()),
+			Status:    meta.Status(status.Int64()),
+			Timestamp: time.Unix(timestamp.Int64(), 0),
+		}
+		logger().
+			WithField("verification", verification).
+			Trace("Blockchain verification found")
+		return verification, nil
+	}
+
+	logger().Trace("No blockchain verification found")
+	return &BlockchainVerification{
+		Status: meta.StatusUnknown,
+	}, nil
 }
 
-func BlockChainVerifyMatchingPublicKey(hash string, pubKey string) (verification *BlockchainVerification, err error) {
-	return BlockChainVerifyMatchingPublicKeys(hash, []string{pubKey})
-}
-
-func BlockChainVerifyMatchingPublicKeys(hash string, pubKeys []string) (verification *BlockchainVerification, err error) {
+// Verify returns the most recent *BlockchainVerification with highest level available for the given hash.
+func Verify(hash string) (*BlockchainVerification, error) {
 	logger().WithFields(logrus.Fields{
 		"hash": hash,
-		"keys": pubKeys,
-	}).Trace("BlockChainVerifyMatchingPublicKeys")
+	}).Trace("Verify")
 
-	// Connect and get verification count
-	client, err := ethclient.Dial(meta.MainNetEndpoint())
-	if err != nil {
-		return nil, err
-	}
-	contractAddress := common.HexToAddress(meta.AssetsRelayContractAddress())
-	instance, err := blockchain.NewAssetsRelay(contractAddress, client)
-	if err != nil {
-		return nil, err
-	}
-	count, err := instance.GetAssetCountForHash(nil, hash)
-	if err != nil {
-		return nil, err
-	}
+	return callVerifyFunc(func(instance *blockchain.AssetsRelay) (common.Address, *big.Int, *big.Int, *big.Int, error) {
+		return instance.Verify(nil, hash)
+	})
+}
 
-	// Make a map to lookup pubKey quickly
-	keysMap := map[string]bool{}
-	for i, pubKey := range pubKeys {
-		pubKey = strings.ToLower(pubKey)
-		pubKeys[i] = pubKey
-		keysMap[pubKey] = true
-	}
+// VerifyMatchingSignerIDWithFallback returns *BlockchainVerification for the hash matching a given SignerID,
+// if any, otherwise it returns the same result of Verify().
+func VerifyMatchingSignerIDWithFallback(hash string, signerID string) (*BlockchainVerification, error) {
+	logger().WithFields(logrus.Fields{
+		"hash":     hash,
+		"signerID": signerID,
+	}).Trace("VerifyMatchingSignerIDWithFallback")
 
-	// Iterate over verifications
-	for i := count.Int64() - 1; i >= 0; i-- {
-		address, level, status, timestamp, err := instance.VerifyByIndex(nil, hash, big.NewInt(i))
-		if err != nil {
-			return nil, err
-		}
-		if keysMap[strings.ToLower(address.Hex())] {
-			return &BlockchainVerification{
-				Owner:     address,
-				Level:     meta.Level(level.Int64()),
-				Status:    meta.Status(status.Int64()),
-				Timestamp: time.Unix(timestamp.Int64(), 0),
-			}, nil
-		}
+	address := common.HexToAddress(signerID)
+
+	return callVerifyFunc(func(instance *blockchain.AssetsRelay) (common.Address, *big.Int, *big.Int, *big.Int, error) {
+		return instance.VerifyAgainstPublisherWithFallback(nil, hash, address)
+	})
+}
+
+// VerifyMatchingSignerID returns *BlockchainVerification for hash matching a given SignerID.
+func VerifyMatchingSignerID(hash string, signerID string) (*BlockchainVerification, error) {
+	return VerifyMatchingSignerIDs(hash, []string{signerID})
+}
+
+// VerifyMatchingSignerIDs returns *BlockchainVerification for hash
+// matching at least one of signerIDs.
+func VerifyMatchingSignerIDs(hash string, signerIDs []string) (*BlockchainVerification, error) {
+	logger().WithFields(logrus.Fields{
+		"hash":      hash,
+		"signerIDs": signerIDs,
+	}).Trace("VerifyMatchingSignerIDs")
+
+	addresses := make([]common.Address, len(signerIDs))
+	for i, s := range signerIDs {
+		addresses[i] = common.HexToAddress(s)
 	}
 
-	return nil, fmt.Errorf("no matching asset for hash %s and publicKeys %s", hash, pubKeys)
+	return callVerifyFunc(func(instance *blockchain.AssetsRelay) (common.Address, *big.Int, *big.Int, *big.Int, error) {
+		return instance.VerifyAgainstPublishers(nil, hash, addresses)
+	})
 }

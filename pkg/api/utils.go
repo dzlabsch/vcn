@@ -15,6 +15,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/vchain-us/vcn/internal/errors"
 	"github.com/vchain-us/vcn/internal/logs"
+	"github.com/vchain-us/vcn/pkg/meta"
 )
 
 func logger() *logrus.Logger {
@@ -48,6 +49,7 @@ func contains(xs []string, x string) bool {
 
 func newSling(token string) (s *sling.Sling) {
 	s = sling.New()
+	s.Add("User-Agent", meta.UserAgent())
 	if token != "" {
 		s = s.Add("Authorization", "Bearer "+token)
 	}

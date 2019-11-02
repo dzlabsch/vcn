@@ -9,23 +9,34 @@
 package meta
 
 import (
+	"fmt"
 	"log"
+	"runtime"
+
+	"github.com/fatih/color"
 )
 
+// Level is the type for all possible signature levels
 type Level int64
+
+// Status is the type for all possible asset statuses
 type Status int64
+
+// Visibility is the type for all visibility values
 type Visibility int64
 
+// Allowed Level values
 const (
 	LevelDisabled         Level = -1
 	LevelUnknown          Level = 0
 	LevelEmailVerified    Level = 1
 	LevelSocialVerified   Level = 2
-	LevelIdVerified       Level = 3
+	LevelIDVerified       Level = 3
 	LevelLocationVerified Level = 4
 	LevelVchain           Level = 99
 )
 
+// Allowed Status values
 const (
 	StatusTrusted     Status = 0
 	StatusUntrusted   Status = 1
@@ -33,32 +44,36 @@ const (
 	StatusUnsupported Status = 3
 )
 
+// Allowed Visibility values
 const (
 	VisibilityPublic  Visibility = 0
 	VisibilityPrivate Visibility = 1
 )
 
+// Event tracking related consts
 const (
 	VcnLoginEvent  string = "VCN_LOGIN"
 	VcnSignEvent   string = "VCN_SIGN"
 	VcnVerifyEvent string = "VCN_VERIFY"
-	// todo(leogr): backend needs to be update prior to fix event strings
-	KeyCreatedEvent  string = "KEYSTORE_CREATED"
-	KeyUploadedEvent string = "KEYSTORE_UPLOADED"
 )
 
+// vcn environment variable names
 const (
-	VcnUserEnv          string = "VCN_USER"
-	VcnPasswordEnv      string = "VCN_PASSWORD"
-	KeyStorePasswordEnv string = "KEYSTORE_PASSWORD"
+	VcnUserEnv                   string = "VCN_USER"
+	VcnPasswordEnv               string = "VCN_PASSWORD"
+	VcnNotarizationPassword      string = "VCN_NOTARIZATION_PASSWORD"
+	VcnNotarizationPasswordEmpty string = "VCN_NOTARIZATION_PASSWORD_EMPTY"
 )
 
-func VcnClientName() (name string) {
-	return "VCN:" + Version()
+// UserAgent returns the vcn's User-Agent string
+func UserAgent() string {
+	// Syntax reference: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent#Syntax
+	return fmt.Sprintf("vcn/%s (%s; %s)", Version(), runtime.GOOS, runtime.GOARCH)
 }
 
-func LevelName(level Level) (name string) {
-	switch level {
+// String returns the name of the given level as string.
+func (l Level) String() string {
+	switch l {
 	case LevelDisabled:
 		return "DISABLED"
 	case LevelUnknown:
@@ -67,20 +82,21 @@ func LevelName(level Level) (name string) {
 		return "1 - EMAIL_VERIFIED"
 	case LevelSocialVerified:
 		return "2 - SOCIAL_VERIFIED"
-	case LevelIdVerified:
+	case LevelIDVerified:
 		return "3 - ID_VERIFIED"
 	case LevelLocationVerified:
 		return "4 - LOCATION_VERIFIED"
 	case LevelVchain:
 		return "99 - VCHAIN"
 	default:
-		log.Fatal("unsupported level", name)
+		log.Fatal("unsupported level: ", int64(l))
 		return ""
 	}
 }
 
-func StatusName(status Status) (name string) {
-	switch status {
+// String returns the name of the given status as string
+func (s Status) String() string {
+	switch s {
 	case StatusTrusted:
 		return "TRUSTED"
 	case StatusUntrusted:
@@ -90,27 +106,34 @@ func StatusName(status Status) (name string) {
 	case StatusUnsupported:
 		return "UNSUPPORTED"
 	default:
-		log.Fatal("unsupported status", name)
+		log.Fatal("unsupported status: ", int64(s))
 		return ""
 	}
 }
 
-func VisibilityName(visibility Visibility) (name string) {
-	switch visibility {
+// StatusNameStyled returns the colorized name of the given status as string
+func StatusNameStyled(status Status) string {
+	c, s := StatusColor(status)
+	return color.New(c, s).Sprintf(status.String())
+}
+
+// String returns the name of the given visibility as string
+func (v Visibility) String() string {
+	switch v {
 	case VisibilityPublic:
 		return "PUBLIC"
 	case VisibilityPrivate:
 		return "PRIVATE"
 	default:
-		log.Fatal("unsupported visibility", name)
+		log.Fatal("unsupported visibility: ", int(64))
 		return ""
 	}
 }
 
-func VisibilityForFlag(public bool) (visibility Visibility) {
+// VisibilityForFlag returns VisibilityPublic if public is true, otherwise VisibilityPrivate
+func VisibilityForFlag(public bool) Visibility {
 	if public {
 		return VisibilityPublic
-	} else {
-		return VisibilityPrivate
 	}
+	return VisibilityPrivate
 }

@@ -45,9 +45,10 @@ func ELF(file *os.File) (*Data, error) {
 	platform := elfosabiDesc[f.OSABI]
 	if platform == "" {
 		// https://refspecs.linuxfoundation.org/LSB_1.2.0/gLSB/noteabitag.html
-		abiTag := f.Section(".note.ABI-tag")
-		if data, err := abiTag.Data(); err == nil && strings.Contains(string(data), "GNU") {
-			platform = "GNU/Linux"
+		if abiTag := f.Section(".note.ABI-tag"); abiTag != nil {
+			if data, err := abiTag.Data(); err == nil && strings.Contains(string(data), "GNU") {
+				platform = "GNU/Linux"
+			}
 		}
 	}
 

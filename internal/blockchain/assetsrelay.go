@@ -28,7 +28,7 @@ var (
 )
 
 // AssetsRelayABI is the input ABI used to generate the binding from.
-const AssetsRelayABI = "[{\"constant\":false,\"inputs\":[{\"name\":\"hash\",\"type\":\"string\"},{\"name\":\"status\",\"type\":\"int256\"}],\"name\":\"sign\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"publicKey\",\"type\":\"address\"}],\"name\":\"getPublisherByAddress\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"},{\"name\":\"\",\"type\":\"int256\"},{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"publicKeys\",\"type\":\"address[]\"}],\"name\":\"disablePublisher\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"getPublishers\",\"outputs\":[{\"name\":\"\",\"type\":\"address[]\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"aContract\",\"type\":\"address\"}],\"name\":\"setContract\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"getAssetCount\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"hash\",\"type\":\"string\"}],\"name\":\"verify\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"},{\"name\":\"\",\"type\":\"int256\"},{\"name\":\"\",\"type\":\"int256\"},{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"hash\",\"type\":\"string\"}],\"name\":\"getAssetCountForHash\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"publicKeys\",\"type\":\"address[]\"},{\"name\":\"level\",\"type\":\"int256\"}],\"name\":\"setPublisherLevel\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"createdAt\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"hash\",\"type\":\"string\"},{\"name\":\"assetIndex\",\"type\":\"uint256\"}],\"name\":\"verifyByIndex\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"},{\"name\":\"\",\"type\":\"int256\"},{\"name\":\"\",\"type\":\"int256\"},{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"assetsContract\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"hashIndex\",\"type\":\"uint256\"}],\"name\":\"getHashByIndex\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"aContract\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"}]"
+const AssetsRelayABI = "[{\"constant\":false,\"inputs\":[{\"name\":\"hash\",\"type\":\"string\"},{\"name\":\"status\",\"type\":\"int256\"}],\"name\":\"sign\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"hash\",\"type\":\"string\"},{\"name\":\"addresses\",\"type\":\"address[]\"}],\"name\":\"verifyAgainstPublishers\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"},{\"name\":\"\",\"type\":\"int256\"},{\"name\":\"\",\"type\":\"int256\"},{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"publicKey\",\"type\":\"address\"}],\"name\":\"getPublisherByAddress\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"},{\"name\":\"\",\"type\":\"int256\"},{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"hash\",\"type\":\"string\"},{\"name\":\"a\",\"type\":\"address\"}],\"name\":\"verifyAgainstPublisherWithFallback\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"},{\"name\":\"\",\"type\":\"int256\"},{\"name\":\"\",\"type\":\"int256\"},{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"publicKeys\",\"type\":\"address[]\"}],\"name\":\"disablePublisher\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"getPublishers\",\"outputs\":[{\"name\":\"\",\"type\":\"address[]\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"aContract\",\"type\":\"address\"}],\"name\":\"setContract\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"getAssetCount\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"hash\",\"type\":\"string\"}],\"name\":\"verify\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"},{\"name\":\"\",\"type\":\"int256\"},{\"name\":\"\",\"type\":\"int256\"},{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"hash\",\"type\":\"string\"}],\"name\":\"getAssetCountForHash\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"publicKeys\",\"type\":\"address[]\"},{\"name\":\"level\",\"type\":\"int256\"}],\"name\":\"setPublisherLevel\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"createdAt\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"hash\",\"type\":\"string\"},{\"name\":\"assetIndex\",\"type\":\"uint256\"}],\"name\":\"verifyByIndex\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"},{\"name\":\"\",\"type\":\"int256\"},{\"name\":\"\",\"type\":\"int256\"},{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"assetsContract\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"hashIndex\",\"type\":\"uint256\"}],\"name\":\"getHashByIndex\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"aContract\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"}]"
 
 // AssetsRelay is an auto generated Go binding around an Ethereum contract.
 type AssetsRelay struct {
@@ -418,6 +418,74 @@ func (_AssetsRelay *AssetsRelaySession) Verify(hash string) (common.Address, *bi
 // Solidity: function verify(string hash) constant returns(address, int256, int256, uint256)
 func (_AssetsRelay *AssetsRelayCallerSession) Verify(hash string) (common.Address, *big.Int, *big.Int, *big.Int, error) {
 	return _AssetsRelay.Contract.Verify(&_AssetsRelay.CallOpts, hash)
+}
+
+// VerifyAgainstPublisherWithFallback is a free data retrieval call binding the contract method 0x402cf5cc.
+//
+// Solidity: function verifyAgainstPublisherWithFallback(string hash, address a) constant returns(address, int256, int256, uint256)
+func (_AssetsRelay *AssetsRelayCaller) VerifyAgainstPublisherWithFallback(opts *bind.CallOpts, hash string, a common.Address) (common.Address, *big.Int, *big.Int, *big.Int, error) {
+	var (
+		ret0 = new(common.Address)
+		ret1 = new(*big.Int)
+		ret2 = new(*big.Int)
+		ret3 = new(*big.Int)
+	)
+	out := &[]interface{}{
+		ret0,
+		ret1,
+		ret2,
+		ret3,
+	}
+	err := _AssetsRelay.contract.Call(opts, out, "verifyAgainstPublisherWithFallback", hash, a)
+	return *ret0, *ret1, *ret2, *ret3, err
+}
+
+// VerifyAgainstPublisherWithFallback is a free data retrieval call binding the contract method 0x402cf5cc.
+//
+// Solidity: function verifyAgainstPublisherWithFallback(string hash, address a) constant returns(address, int256, int256, uint256)
+func (_AssetsRelay *AssetsRelaySession) VerifyAgainstPublisherWithFallback(hash string, a common.Address) (common.Address, *big.Int, *big.Int, *big.Int, error) {
+	return _AssetsRelay.Contract.VerifyAgainstPublisherWithFallback(&_AssetsRelay.CallOpts, hash, a)
+}
+
+// VerifyAgainstPublisherWithFallback is a free data retrieval call binding the contract method 0x402cf5cc.
+//
+// Solidity: function verifyAgainstPublisherWithFallback(string hash, address a) constant returns(address, int256, int256, uint256)
+func (_AssetsRelay *AssetsRelayCallerSession) VerifyAgainstPublisherWithFallback(hash string, a common.Address) (common.Address, *big.Int, *big.Int, *big.Int, error) {
+	return _AssetsRelay.Contract.VerifyAgainstPublisherWithFallback(&_AssetsRelay.CallOpts, hash, a)
+}
+
+// VerifyAgainstPublishers is a free data retrieval call binding the contract method 0x32889c3d.
+//
+// Solidity: function verifyAgainstPublishers(string hash, address[] addresses) constant returns(address, int256, int256, uint256)
+func (_AssetsRelay *AssetsRelayCaller) VerifyAgainstPublishers(opts *bind.CallOpts, hash string, addresses []common.Address) (common.Address, *big.Int, *big.Int, *big.Int, error) {
+	var (
+		ret0 = new(common.Address)
+		ret1 = new(*big.Int)
+		ret2 = new(*big.Int)
+		ret3 = new(*big.Int)
+	)
+	out := &[]interface{}{
+		ret0,
+		ret1,
+		ret2,
+		ret3,
+	}
+	err := _AssetsRelay.contract.Call(opts, out, "verifyAgainstPublishers", hash, addresses)
+	return *ret0, *ret1, *ret2, *ret3, err
+}
+
+// VerifyAgainstPublishers is a free data retrieval call binding the contract method 0x32889c3d.
+//
+// Solidity: function verifyAgainstPublishers(string hash, address[] addresses) constant returns(address, int256, int256, uint256)
+func (_AssetsRelay *AssetsRelaySession) VerifyAgainstPublishers(hash string, addresses []common.Address) (common.Address, *big.Int, *big.Int, *big.Int, error) {
+	return _AssetsRelay.Contract.VerifyAgainstPublishers(&_AssetsRelay.CallOpts, hash, addresses)
+}
+
+// VerifyAgainstPublishers is a free data retrieval call binding the contract method 0x32889c3d.
+//
+// Solidity: function verifyAgainstPublishers(string hash, address[] addresses) constant returns(address, int256, int256, uint256)
+func (_AssetsRelay *AssetsRelayCallerSession) VerifyAgainstPublishers(hash string, addresses []common.Address) (common.Address, *big.Int, *big.Int, *big.Int, error) {
+	return _AssetsRelay.Contract.VerifyAgainstPublishers(&_AssetsRelay.CallOpts, hash, addresses)
 }
 
 // VerifyByIndex is a free data retrieval call binding the contract method 0xd6ce25a9.

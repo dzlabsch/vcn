@@ -15,24 +15,29 @@ import (
 	"github.com/vchain-us/vcn/pkg/meta"
 )
 
-type VerifyArtifactTrackingEventRequest struct {
+type verifyArtifactTrackingEventRequest struct {
 	Client   string `json:"client"`
 	Filename string `json:"filename"`
 	Hash     string `json:"hash"`
-	Url      string `json:"url"`
+	URL      string `json:"url"`
 }
 
-type SignArtifactTrackingEventRequest struct {
+type signArtifactTrackingEventRequest struct {
 	Filename string `json:"filename"`
 	Hash     string `json:"hash"`
 	Name     string `json:"name"`
-	Url      string `json:"url"`
+	URL      string `json:"url"`
 }
 
-type PublisherTrackingEventRequest struct {
+type publisherTrackingEventRequest struct {
 	Name string `json:"name"`
 }
 
+func trackingEvent() string {
+	return meta.APIEndpoint("tracking-event")
+}
+
+// TrackVerify is deprecated and will be removed
 func TrackVerify(user *User, hash string, filename string) (err error) {
 	logger().WithFields(logrus.Fields{
 		"hash":     hash,
@@ -40,9 +45,9 @@ func TrackVerify(user *User, hash string, filename string) (err error) {
 	}).Trace("TrackVerify")
 	restError := new(Error)
 	r, err := newSling(user.token()).
-		Post(meta.TrackingEvent()+"/verify").
-		BodyJSON(VerifyArtifactTrackingEventRequest{
-			Client:   meta.VcnClientName(),
+		Post(trackingEvent()+"/verify").
+		BodyJSON(verifyArtifactTrackingEventRequest{
+			Client:   meta.UserAgent(),
 			Filename: filename,
 			Hash:     hash,
 		}).Receive(nil, restError)
@@ -55,14 +60,15 @@ func TrackVerify(user *User, hash string, filename string) (err error) {
 	return nil
 }
 
+// TrackPublisher is deprecated and will be removed
 func TrackPublisher(user *User, event string) (err error) {
 	logger().WithFields(logrus.Fields{
 		"event": event,
 	}).Trace("TrackPublisher")
 	restError := new(Error)
 	r, err := newSling(user.token()).
-		Post(meta.TrackingEvent()+"/publisher").
-		BodyJSON(PublisherTrackingEventRequest{
+		Post(trackingEvent()+"/publisher").
+		BodyJSON(publisherTrackingEventRequest{
 			Name: event,
 		}).Receive(nil, restError)
 	if err != nil {
@@ -74,6 +80,7 @@ func TrackPublisher(user *User, event string) (err error) {
 	return nil
 }
 
+// TrackSign is deprecated and will be removed
 func TrackSign(user *User, hash string, filename string, status meta.Status) (err error) {
 	logger().WithFields(logrus.Fields{
 		"hash":     hash,
@@ -82,9 +89,9 @@ func TrackSign(user *User, hash string, filename string, status meta.Status) (er
 	}).Trace("TrackSign")
 	restError := new(Error)
 	r, err := newSling(user.token()).
-		Post(meta.TrackingEvent()+"/sign").
-		BodyJSON(SignArtifactTrackingEventRequest{
-			Name:     meta.StatusName(status),
+		Post(trackingEvent()+"/sign").
+		BodyJSON(signArtifactTrackingEventRequest{
+			Name:     status.String(),
 			Hash:     hash,
 			Filename: filename,
 		}).Receive(nil, restError)

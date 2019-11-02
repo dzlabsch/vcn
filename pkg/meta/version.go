@@ -8,9 +8,21 @@
 
 package meta
 
-var version = "v0.4.x-dev"
+var version = ""
+
+var gitCommit = ""
+var gitBranch = ""
 
 // Version returns the current CodeNotary vcn version string
 func Version() string {
 	return version
+}
+
+// GitRevision returns the current CodeNotary vcn git revision string
+func GitRevision() string {
+	rev := gitCommit
+	if gitBranch != "" {
+		rev += " (" + gitBranch + ")"
+	}
+	return rev
 }

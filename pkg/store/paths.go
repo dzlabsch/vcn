@@ -11,6 +11,9 @@ package store
 import (
 	"os"
 	"path/filepath"
+
+	"github.com/mitchellh/go-homedir"
+	"github.com/vchain-us/vcn/pkg/meta"
 )
 
 var dir = DefaultDirName
@@ -29,7 +32,27 @@ func defaultConfigFilepath() string {
 	return filepath.Join(dir, configFilename)
 }
 
-// SetDir sets the store working directory (e.g. ~/.vcn)
+// SetDefaultDir sets the default store working directory (eg. ~/.vcn)
+func SetDefaultDir() error {
+	// Find home directory
+	home, err := homedir.Dir()
+	if err != nil {
+		return err
+	}
+	var vcn string
+	switch meta.StageEnvironment() {
+	case meta.StageStaging:
+		vcn = DefaultDirName + ".staging"
+	case meta.StageTest:
+		vcn = DefaultDirName + ".test"
+	default:
+		vcn = DefaultDirName
+	}
+	SetDir(filepath.Join(home, vcn))
+	return nil
+}
+
+// SetDir sets the store working directory (eg. ~/.vcn)
 func SetDir(p string) {
 	dir = p
 }

@@ -16,43 +16,39 @@ import (
 	"github.com/vchain-us/vcn/pkg/meta"
 )
 
-type AuthRequest struct {
+type authRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-type TokenResponse struct {
+type tokenResponse struct {
 	Token string `token:"token"`
 }
 
-type Error struct {
-	Status    int    `json:"status"`
-	Message   string `json:"message"`
-	Path      string `json:"path"`
-	Timestamp string `json:"timestamp"`
-	Error     string `json:"error"`
-}
-
-type PublisherExistsResponse struct {
+type publisherExistsResponse struct {
 	Exists bool `json:"exists"`
 }
 
-type PublisherExistsParams struct {
+type publisherExistsParams struct {
 	Email string `url:"email"`
 }
 
-func CheckPublisherExists(email string) (success bool, err error) {
-	response := new(PublisherExistsResponse)
+func publisherEndpoint() string {
+	return meta.APIEndpoint("publisher")
+}
+
+func checkUserExists(email string) (success bool, err error) {
+	response := new(publisherExistsResponse)
 	restError := new(Error)
 	r, err := sling.New().
-		Get(meta.PublisherEndpoint()+"/exists").
-		QueryStruct(&PublisherExistsParams{Email: email}).
+		Get(publisherEndpoint()+"/exists").
+		QueryStruct(&publisherExistsParams{Email: email}).
 		Receive(&response, restError)
 	logger().WithFields(logrus.Fields{
 		"response":  response,
 		"err":       err,
 		"restError": restError,
-	}).Trace("CheckPublisherExists")
+	}).Trace("checkUserExists")
 	if err != nil {
 		return false, err
 	}
@@ -65,22 +61,24 @@ func CheckPublisherExists(email string) (success bool, err error) {
 func checkToken(token string) (success bool, err error) {
 	restError := new(Error)
 	response, err := newSling(token).
-		Get(meta.TokenCheckEndpoint()).
+		Get(publisherEndpoint()+"/auth/check").
 		Receive(nil, restError)
 	logger().WithFields(logrus.Fields{
 		"response":  response,
 		"err":       err,
 		"restError": restError,
 	}).Trace("checkToken")
-	switch response.StatusCode {
-	case 200:
-		return true, nil
-	case 401:
-		fallthrough
-	case 403:
-		fallthrough
-	case 419:
-		return false, nil
+	if response != nil {
+		switch response.StatusCode {
+		case 200:
+			return true, nil
+		case 401:
+			fallthrough
+		case 403:
+			fallthrough
+		case 419:
+			return false, nil
+		}
 	}
 	if restError.Error != "" {
 		err = fmt.Errorf("%+v", restError)
@@ -89,11 +87,11 @@ func checkToken(token string) (success bool, err error) {
 }
 
 func authenticateUser(email string, password string) (token string, err error) {
-	response := new(TokenResponse)
+	response := new(tokenResponse)
 	restError := new(Error)
 	r, err := sling.New().
-		Post(meta.PublisherEndpoint()+"/auth").
-		BodyJSON(AuthRequest{Email: email, Password: password}).
+		Post(publisherEndpoint()+"/auth").
+		BodyJSON(authRequest{Email: email, Password: password}).
 		Receive(response, restError)
 	logger().WithFields(logrus.Fields{
 		"email":     email,

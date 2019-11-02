@@ -9,6 +9,7 @@
 package file
 
 import (
+	"io"
 	"net/http"
 	"os"
 
@@ -20,8 +21,12 @@ func contentType(file *os.File) (string, error) {
 	// Only the first 512 bytes are used to sniff the content type.
 	file.Seek(0, 0)
 	buf := make([]byte, 512)
-	_, err := file.Read(buf)
+	n, err := file.Read(buf)
 	if err != nil {
+		if n == 0 && err == io.EOF {
+			// empty file, no content type
+			return "", nil
+		}
 		return "", err
 	}
 

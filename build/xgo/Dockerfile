@@ -1,4 +1,4 @@
-FROM techknowlogick/xgo:go-1.12.x
+FROM techknowlogick/xgo:go-1.13.x
 
 # Inject the customized build script
 ADD build.sh /build.sh

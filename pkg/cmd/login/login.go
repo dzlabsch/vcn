@@ -13,32 +13,47 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/vchain-us/vcn/internal/cli"
-	"github.com/vchain-us/vcn/internal/migrate"
 	"github.com/vchain-us/vcn/pkg/api"
+	"github.com/vchain-us/vcn/pkg/cmd/internal/cli"
 	"github.com/vchain-us/vcn/pkg/meta"
 	"github.com/vchain-us/vcn/pkg/store"
 )
 
-// NewCmdLogin returns the cobra command for `vcn login`
-func NewCmdLogin() *cobra.Command {
+// NewCommand returns the cobra command for `vcn login`
+func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "login",
-		Short: "Sign-in to vChain.us",
-		Long:  ``,
-		RunE:  runLogin,
-		Args:  cobra.NoArgs,
+		Short: "Log in to codenotary.io",
+		Long: `Log in to codenotary.io.
+
+VCN_USER and VCN_PASSWORD env vars can be used to pass credentials 
+in a non-interactive environment.
+`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.SilenceUsage = true
+			output, err := cmd.Flags().GetString("output")
+			if err != nil {
+				return err
+			}
+
+			if err := Execute(); err != nil {
+				return err
+			}
+			if output == "" {
+				fmt.Println("Login successful.")
+			}
+			return nil
+		},
+		Args: cobra.NoArgs,
 	}
 
 	return cmd
 }
 
-func runLogin(cmd *cobra.Command, args []string) error {
-	cmd.SilenceUsage = true
-	return login()
-}
+// Execute the login action
+func Execute() error {
 
-func login() error {
+	cfg := store.Config()
 
 	email, err := cli.ProvidePlatformUsername()
 	if err != nil {
@@ -46,69 +61,24 @@ func login() error {
 	}
 
 	user := api.NewUser(email)
-	isExist, err := user.IsExist()
-	if err != nil {
-		return err
-	}
-	if !isExist {
-		return fmt.Errorf("no such user, please create an account at: %s", meta.DashboardURL())
-	}
 
 	password, err := cli.ProvidePlatformPassword()
 	if err != nil {
 		return err
 	}
 
+	cfg.ClearContext()
 	if err := user.Authenticate(password); err != nil {
 		return err
 	}
+	cfg.CurrentContext = user.Email()
 
-	_ = api.TrackPublisher(user, meta.VcnLoginEvent)
-
-	user.DefaultKeystore() // ensure default keystore
-	store.Config().CurrentContext = user.Email()
+	// Store the new config
 	if err := store.SaveConfig(); err != nil {
 		return err
 	}
 
-	migrate.From03x(user)
+	api.TrackPublisher(user, meta.VcnLoginEvent)
 
-	if !user.HasKey() {
-
-		fmt.Println("You have no keys set up yet.")
-		fmt.Println("<vcn> will now do this for you and upload the public key to the platform.")
-
-		keyPassphrase, err := cli.PromptPassphrase()
-		if err != nil {
-			return err
-		}
-
-		keystore, err := user.DefaultKeystore()
-		if err != nil {
-			return err
-		}
-		if err := store.SaveConfig(); err != nil {
-			return err
-		}
-
-		pubKey, err := keystore.CreateKey(keyPassphrase)
-		if err != nil {
-			return err
-		}
-
-		fmt.Println("Keystore successfully created. We are updating your user profile.\n" +
-			"You will be able to sign your first asset in one minute")
-		fmt.Println("Keystore:\t", keystore.Path)
-		fmt.Println("Public key:\t", pubKey)
-
-		_ = api.TrackPublisher(user, meta.KeyCreatedEvent)
-	}
-
-	err = user.SyncKeys()
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("Login successful.")
 	return nil
 }

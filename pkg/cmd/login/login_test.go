@@ -52,5 +52,5 @@ func TestLoginByEnv(t *testing.T) {
 	os.Setenv(meta.VcnUserEnv, user)
 	os.Setenv(meta.VcnPasswordEnv, password)
 
-	login()
+	Execute()
 }

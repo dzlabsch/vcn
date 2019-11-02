@@ -35,7 +35,7 @@ func (m mapOpts) String() string {
 }
 
 func (m mapOpts) Type() string {
-	return "list"
+	return "key=value"
 }
 
 func (m mapOpts) StringToInterface() map[string]interface{} {

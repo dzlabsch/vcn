@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/vchain-us/vcn/pkg/api"
+	"github.com/vchain-us/vcn/pkg/extractor"
 	"github.com/vchain-us/vcn/pkg/uri"
 )
 
@@ -23,7 +24,7 @@ import (
 const Scheme = "file"
 
 // Artifact returns a file *api.Artifact from a given u
-func Artifact(u *uri.URI) (*api.Artifact, error) {
+func Artifact(u *uri.URI, options ...extractor.Option) (*api.Artifact, error) {
 
 	if u.Scheme != "" && u.Scheme != Scheme {
 		return nil, nil
@@ -60,7 +61,9 @@ func Artifact(u *uri.URI) (*api.Artifact, error) {
 	}
 
 	// Infer version from filename
-	m["version"] = inferVer(stat.Name())
+	if version := inferVer(stat.Name()); version != "" {
+		m["version"] = version
+	}
 
 	// Sniff executable info, if any
 	if ok, data, _ := xInfo(f, &ct); ok {

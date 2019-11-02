@@ -15,26 +15,32 @@ import (
 	"strings"
 
 	"github.com/vchain-us/vcn/pkg/api"
+	"github.com/vchain-us/vcn/pkg/extractor"
 	"github.com/vchain-us/vcn/pkg/uri"
 )
 
-// Scheme for docker
+// Scheme for docker (default)
 const Scheme = "docker"
 
-// Artifact returns a file *api.Artifact from a given u
-func Artifact(u *uri.URI) (*api.Artifact, error) {
+// SchemePodman is the scheme for podman (Docker-compatible CLI interface)
+const SchemePodman = "podman"
 
-	if u.Scheme != Scheme {
+var schemes = map[string]bool{Scheme: true, SchemePodman: true}
+
+// Artifact returns a file *api.Artifact from a given u
+func Artifact(u *uri.URI, options ...extractor.Option) (*api.Artifact, error) {
+
+	if !schemes[u.Scheme] {
 		return nil, nil
 	}
 
 	id := strings.TrimPrefix(u.Opaque, "//")
-	images, err := inspect(id)
+	images, err := inspect(u.Scheme, id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to inspect docker image: %s", err)
+		return nil, fmt.Errorf("failed to inspect %s image: %s", u.Scheme, err)
 	}
 	if len(images) < 1 {
-		return nil, fmt.Errorf("no docker image found for: %s", id)
+		return nil, fmt.Errorf("no %s image found for: %s", u.Scheme, id)
 	}
 
 	i := images[0]
@@ -42,12 +48,16 @@ func Artifact(u *uri.URI) (*api.Artifact, error) {
 	m := api.Metadata{
 		"architecture": i.Architecture,
 		"platform":     i.Os,
-		"version":      i.inferVer(),
 	}
-	m[Scheme] = i
+
+	if version := i.inferVer(); version != "" {
+		m["version"] = version
+	}
+
+	m[u.Scheme] = i
 	return &api.Artifact{
-		Kind:     Scheme,
-		Name:     Scheme + "://" + i.name(),
+		Kind:     u.Scheme,
+		Name:     u.Scheme + "://" + i.name(),
 		Hash:     i.hash(),
 		Size:     i.Size,
 		Metadata: m,
@@ -91,10 +101,13 @@ func (i image) inferVer() string {
 	return ""
 }
 
-func inspect(arg string) ([]image, error) {
-	cmd := exec.Command("docker", "inspect", arg)
+func inspect(executable string, arg string) ([]image, error) {
+	cmd := exec.Command(executable, "inspect", arg, "--type", "image")
 	cmdOutput, err := cmd.Output()
 	if err != nil {
+		if ee, ok := err.(*exec.ExitError); ok && len(ee.Stderr) > 0 {
+			return nil, fmt.Errorf(string(ee.Stderr))
+		}
 		return nil, err
 	}
 	data := []image{}

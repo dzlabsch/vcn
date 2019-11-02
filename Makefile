@@ -1,21 +1,27 @@
 SHELL=/bin/bash -o pipefail
 
-VERSION=0.4.1
+VERSION=0.7.3
 TARGETS=linux/amd64 windows/amd64 darwin/amd64
 
 GO ?= go
 DOCKER ?= docker
 
+GIT_REV := $(shell git rev-parse HEAD 2> /dev/null || true)
+GIT_COMMIT := $(if $(shell git status --porcelain --untracked-files=no),${GIT_REV}-dirty,${GIT_REV})
+GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
 export GO111MODULE=on
 PWD=$(shell pwd)
-LDFLAGS := -s -X github.com/vchain-us/vcn/pkg/meta.version=v${VERSION}
+LDFLAGS := -s -X github.com/vchain-us/vcn/pkg/meta.version=v${VERSION} \
+			  -X github.com/vchain-us/vcn/pkg/meta.gitCommit=${GIT_COMMIT} \
+			  -X github.com/vchain-us/vcn/pkg/meta.gitBranch=${GIT_BRANCH}
 TEST_FLAGS ?= -v -race
 VCNEXE=vcn-v${VERSION}-windows-4.0-amd64.exe
 SETUPEXE=codenotary_vcn_v${VERSION}_setup.exe
 
 .PHONY: vcn
 vcn:
-	$(GO) build ./cmd/vcn
+	$(GO) build -ldflags '${LDFLAGS} -X github.com/vchain-us/vcn/pkg/meta.version=v${VERSION}-dev' ./cmd/vcn
 
 .PHONY: vendor
 vendor:
@@ -31,8 +37,17 @@ install: TEST_FLAGS=-v
 install: vendor test
 	$(GO) install -ldflags '${LDFLAGS}' ./cmd/vcn
 
+.PHONY: static
+static:
+	$(GO) build -a -tags netgo -ldflags '${LDFLAGS} -extldflags "-static"' ./cmd/vcn
+
+.PHONY: docs/cmd
+docs/cmd:
+	rm -rf docs/cmd/*.md
+	$(GO) run docs/cmd/main.go
+
 .PHONY: build/xgo
-build/xgo: 
+build/xgo:
 	$(DOCKER) build \
 			-f ./build/xgo/Dockerfile \
 			-t vcn-xgo \
@@ -52,6 +67,14 @@ clean/dist:
 .PHONY: clean
 clean: clean/dist
 	rm -f ./vcn
+
+.PHONY: CHANGELOG.md
+CHANGELOG.md:
+	git-chglog -o CHANGELOG.md
+
+.PHONY: CHANGELOG.md.next-tag
+CHANGELOG.md.next-tag:
+	git-chglog -o CHANGELOG.md --next-tag v${VERSION}
 
 .PHONY: dist
 dist: clean/dist build/xgo
@@ -90,12 +113,12 @@ dist/NSIS: build/makensis
 	$(DOCKER) run --rm \
 			-v ${PWD}/dist/NSIS/:/app \
 			vcn-makensis /app/setup.nsi
-	mv -f ./dist/NSIS/*_setup.exe ./dist/
+	cp ./dist/NSIS/*_setup.exe ./dist/
 	rm -Rf ./dist/NSIS
 
 .PHONY: dist/sign
 dist/sign: vendor vcn
-	for f in ./dist/*; do ./vcn sign -y $$f; done
+	for f in ./dist/*; do ./vcn sign -p $$f; printf "\n\n"; done
 
 .PHONY: dist/all
 dist/all: dist dist/${VCNEXE} dist/NSIS dist/${SETUPEXE}

@@ -12,6 +12,7 @@ import (
 	"github.com/fatih/color"
 )
 
+// StatusColor returns color.Attribute(s) for the given status
 func StatusColor(status Status) (color.Attribute, color.Attribute) {
 	switch status {
 	case StatusTrusted:
@@ -23,18 +24,22 @@ func StatusColor(status Status) (color.Attribute, color.Attribute) {
 	}
 }
 
+// StyleAffordance returns color.Attribute(s) for affordance messages
 func StyleAffordance() (color.Attribute, color.Attribute) {
 	return color.FgHiBlue, color.Bold
 }
 
+// StyleError returns color.Attribute(s) for error messages
 func StyleError() (color.Attribute, color.Attribute) {
 	return color.FgRed, color.Bold
 }
 
+// StyleWarning returns color.Attribute(s) for warning messages
 func StyleWarning() (color.Attribute, color.Attribute) {
 	return color.FgYellow, color.Bold
 }
 
+// StyleSuccess returns color.Attribute(s) for success messages
 func StyleSuccess() (color.Attribute, color.Attribute) {
 	return color.FgGreen, color.Bold
 }
