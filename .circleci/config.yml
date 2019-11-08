@@ -45,8 +45,8 @@ jobs:
           name: Notarize Docker image
           command: |
             TAG="0.1.${CIRCLE_BUILD_NUM}"
-            VCN_USER=$CODENOTARY_USER VCN_PASSWORD=$CODENOTARY_PASS vcn login
-            VCN_NOTARIZATION_PASSWORD=$CODENOTARY_PASS vcn n --attr CircleCI=$TAG docker://dzlabsch/vcntest:$TAG 
+            VCN_USER=${codenotary_user} VCN_PASSWORD=${codenotary_pass} vcn login
+            VCN_NOTARIZATION_PASSWORD=${codenotary_pass} vcn n --attr CircleCI=$TAG docker://dzlabsch/vcntest:$TAG 
 
       - run:
           name: Push Docker image
