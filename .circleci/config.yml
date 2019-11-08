@@ -52,5 +52,5 @@ jobs:
           name: Push Docker image
           command: |
             TAG="0.1.${CIRCLE_BUILD_NUM}"
-            docker login -u $DOCKER_USER -p $DOCKER_PASS
+            docker login -u ${docker_user} -p ${docker_pass}
             docker push dzlabsch/vcntest:$TAG
