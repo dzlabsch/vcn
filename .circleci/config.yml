@@ -29,7 +29,7 @@ jobs:
             VER="v0.7.3"
             curl -L -o /tmp/vcn https://github.com/vchain-us/vcn/releases/download/v0.7.3/vcn-$VER-linux-amd64
             CHECKSUM=$(sha256sum /tmp/vcn | cut -d " " -f 1)
-            curl -s https://api.codenotary.io/authenticate/$CHECKSUM | grep -q :0
+            curl -s https://api.codenotary.io/authenticate/$CHECKSUM?org=vchain.us | grep -q :0
 
       - run:
           name: Authenticate and move CodeNotary vcn binary
