@@ -1,26 +1,56 @@
 version: 2
 jobs:
-  test-go-1-12:
+  build:
     docker:
-      - image: circleci/golang:1.12
+      - image: golang:1.13.4-stretch
+    working_directory: /go/src/github.com/vchain-us/vcn
+
     environment:
-      GO111MODULE: "on"
+      TEST_RESULTS: /tmp/test-results
+
     steps:
       - checkout
-      - run: sudo apt-get install -y bzr
-      - run: make TEST_FLAGS="-timeout 60s -race -v" test
-  test-go-1-13:
-    docker:
-      - image: circleci/golang:1.13
-    environment:
-      GO111MODULE: "on"
-    steps:
-      - checkout
-      - run: sudo apt-get install -y bzr
-      - run: make TEST_FLAGS="-timeout 60s -coverprofile cover.out -race -v" test
-workflows:
-  version: 2
-  testing:
-    jobs:
-      - test-go-1-12
-      - test-go-1-13
+
+      - run:
+          name: build vcn command
+          command: make vcn
+
+      - setup_remote_docker
+
+      # This should go into custom primary image, here's only for the sake of explanation
+      - run:
+          name: Install Docker client
+          command: |
+            set -x
+            VER="17.03.0-ce"
+            curl -L -o /tmp/docker-$VER.tgz https://get.docker.com/builds/Linux/x86_64/docker-$VER.tgz
+            tar -xz -C /tmp -f /tmp/docker-$VER.tgz
+            mv /tmp/docker/* /usr/bin
+
+      - run:
+          name: Install CodeNotary vcn binary
+          command: |
+            set -x
+            VER="v0.7.3"
+            curl -L -o /usr/local/bin/vcn https://github.com/vchain-us/vcn/releases/download/v0.7.3/vcn-$VER-linux-amd64
+            chmod +x /usr/local/bin/vcn
+
+      - run:
+          name: Build and push Docker image
+          command: |
+            TAG="0.1.${CIRCLE_BUILD_NUM}"
+            docker build -t dzlabsch/vcntest:$TAG .
+
+      - run:
+          name: Notarize Docker image
+          command: |
+            TAG="0.1.${CIRCLE_BUILD_NUM}"
+			VCN_USER=$CODENOTARY_USER VCN_PASSWORD=$CODENOTARY_PASS vcn login
+            VCN_NOTARIZATION_PASSWORD=$CODENOTARY_PASS vcn n --attr CircleCI=$TAG docker://dzlabsch/vcntest:$TAG 
+
+      - run:
+          name: Push Docker image
+          command: |
+            TAG="0.1.${CIRCLE_BUILD_NUM}"
+            docker login -u $DOCKER_USER -p $DOCKER_PASS
+            docker push dzlabsch/vcntest:$TAG
