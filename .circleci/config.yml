@@ -10,11 +10,6 @@ jobs:
 
     steps:
       - checkout
-
-      - run:
-          name: build vcn command
-          command: make vcn
-
       - setup_remote_docker
 
       # This should go into custom primary image, here's only for the sake of explanation
